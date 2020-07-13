@@ -23,7 +23,9 @@ public class Main {
 		// 例えば、ファイルなどが読み書きできない(IOException)、ネットワークに接続できない(ConnectException)など
 		// 想定しておくべき事態を処理する際に用いられる
 		} catch(IOException e) {
-			System.out.println("エラーです。中断します");
+			// getMessageはエラーメッセージを取得するメソッド
+			System.out.println("エラー:"+ e.getMessage());
+			e.printStackTrace();
 		}
 
 		// 他の例外処理クラス
