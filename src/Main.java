@@ -3,42 +3,42 @@ import java.io.IOException;
 
 public class Main {
 	public static void main(String[] args) {
-		// 文法エラーや論理エラーとは違い
-		// メモリが足りなくなった、存在すべきファイルが見つからないまたは消されている、など
-		// プログラムの実行中に起こる想定外のエラーを例外(exception)と呼ぶ
-		// 例外的状況にはtry-catch分を使うことで処理しやすくなる
-		// tryブロックを実行中に、例外的状況が発生したことをJVMが検知すると、処理は直ちにcatchブロックに移行する
-		// IOExceptionが発生する可能性があるときには、
-		// try-catch分を用いて例外が発生したときの代替処理を用意しておかないとコンパイルエラーになる
-		// そのように、例外発生時の対策が用意されているかをコンパイルの時点でチェックされるため
-		// Exception系例外は、チェック例外と呼ばれることもある
+		// tryブロックの中で記述するとスコープの範囲の問題でファイルを閉じることができないためブロック外で定義
+		// また何も代入しないと、初期化が行われておらず、内容が不明な状態で使われる可能性があり、finallyブロックで使うことができない
+		// なので、nullを代入しておく
+		FileWriter fw = null;
 		try {
-			FileWriter fw = new FileWriter("data.txt");
+			fw = new FileWriter("data.txt");
 			fw.write("hello");
-			fw.close();
-			System.out.println("書き込みが成功しました");
-		// catchブロックには、例外的状況が起こった際に処理する内容を記述する
-		// IOExceptionとは、
-		// Exception系例外という、発生を十分に想定して対処を考える必要がある例外的状況を表すクラスの中の一つ
-		// 例えば、ファイルなどが読み書きできない(IOException)、ネットワークに接続できない(ConnectException)など
-		// 想定しておくべき事態を処理する際に用いられる
-		} catch(IOException e) {
-			// getMessageはエラーメッセージを取得するメソッド
-			System.out.println("エラー:"+ e.getMessage());
-			e.printStackTrace();
+		// ざっくりとException系例外全体を範囲指定することもできる
+		} catch(Exception e) {
+			System.out.println("何らかの例外が発生しました");
+		// もしファイルに書き込む際に、エラーが起こった場合その後のファイルを閉じる処理は無視されてしまう
+		// そういったことが起きても対処できるように
+		// 例外が起きても起きなくても必ず実行しなければならない処理は、finallyブロック内に記述する
+		// もしtryブロックの中にreturnがありそれ以降の処置が中断されたとしても、finallyブロックは必ず実行される
+		} finally {
+			// fwの中身がもしnullのままであればそもそも閉じる必要がないため
+			// fwの中身がnull出ない時だけ処理を試みる
+			if(fw != null) {
+				try {
+					// closeもIOExceptionを発生させる可能性があるメソッドのため、try-catch文で囲まなければいけない
+					fw.close();
+				} catch (IOException e) {
+					// ここでは何もしないということを明示するために「;」を使う、これを空文字という
+					// このようにコメントアウトでコメントを記述しておくだけでも良い
+					;
+				}
+			}
 		}
 
-		// 他の例外処理クラス
-		// Error系例外
-		// メモリ不足(OutOfMemoryError)やクラスファイルが壊れている(ClassFormatError)など
-		// catchをしても、回復の見込みがない致命的な状況に用いられる、また、この際は、catchをする必要はない
-
-		// RuntimeException系例外
-		// 変数がnull(NullPointerException)や配列の添字が不正(ArrayIndexOutOfBoundsException)など
-		// いちいち想定していてはキリがないようなもの、など、必ずしも常に発生を想定すべきとまでは言えない例外的状況をに用いられる
-		// catchするかは任意
-
-		// どのクラスのどのメソッドが、どのような例外を発生させる可能性があるかは、APIリファレンスに載っている
-
+		// 上の記述はtry-with-resource分を使うことで簡潔に書くことができる
+		// tryのあとの()内に、後片付け処理が必要な変数の宣言を行う
+		try(FileWriter fw2 = new FileWriter("data.txt");){
+			fw.write("hello!");
+		} catch(Exception e) {
+			System.out.println("何らかの例外が発生しました");
+		}
+		// finallyブロックを記述しなくてもJVMによって自動的にcloseメソッドが呼び出される
 	}
 }
